@@ -108,6 +108,11 @@ def unsqueeze_expand() -> None:
     example = torch.arange(3)# 1 2 3 similar to range
     print("example:", example)
     print("example.unsqueeze(1).shape:", example.unsqueeze(1).shape)
+
+    #we can do unsqueeze in a nice syntax like so
+    print("example[:,None].shape:", example[:,None].shape)
+
+
     print("example.unsqueeze(1).expand(3, 2):\n", example.unsqueeze(1).expand(3, 2))
     target = torch.zeros((3, 2))
     print("example.unsqueeze(1).expand_as(target):\n", example.unsqueeze(1).expand_as(target))
@@ -154,6 +159,23 @@ def reductions() -> None:
     median_vals, median_idx = stats.median(dim=1)
     print("stats.median(dim=1):", median_vals, "indices:", median_idx)
 
+def simple_indexing() -> None:
+    x = torch.arange(24).reshape(2, 3, 4)
+    print("x shape:", x.shape)
+
+    print("x[0].shape:", x[0].shape)        # drop leading dim
+    print("x[:, 1].shape:", x[:, 1].shape)  # select along dim
+    print("x[..., 2].shape:", x[..., 2].shape)
+
+    # None / unsqueeze
+    # sometimes we wana add a dimention
+    # Nones get replaced with just an additional new dimention of size 1 same as np.newaxis
+    print("x[:, None].shape:", x[:, None].shape)
+    print("x.unsqueeze(1).shape:", x.unsqueeze(1).shape)  # same as x[:, None]
+
+    # Mixing slice + integer
+    print("x[1, :, 0]:\n", x[1, :, 0])
+
 
 def boolean_indexing() -> None:
     # indexing by boolean lets us gather specific inputs
@@ -165,6 +187,21 @@ def boolean_indexing() -> None:
     print("mask:\n", mask.shape)
     print("x[mask]:", x[mask].shape)
 
+def integer_indexing() -> None:
+    # Integer tensor indexing (a.k.a. advanced indexing)
+    # Index tensors are broadcast together
+    # Output shape == broadcasted index shape (+ remaining dims)
+
+    x = torch.arange(9).reshape(3, 3)
+    print("x:\n", x)
+
+    idx = torch.tensor([[1, 1],
+                        [2, 2]])
+
+    y = x[idx]
+    print("idx shape:", idx.shape)
+    print("x[idx] shape:", y.shape)
+    print("x[idx]:\n", y)
 
 def gather_examples() -> None:
     # torch.gather selects values from one dimension using an index tensor, output shape follows the index
@@ -218,5 +255,7 @@ if __name__ == "__main__":
     # broadcast_matmul()
     # reductions()
     # boolean_indexing()
+    # simple_indexing()
+    # integer_indexing()
     # gather_examples()
     # einsum_examples()
