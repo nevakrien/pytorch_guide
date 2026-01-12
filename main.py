@@ -54,6 +54,51 @@ def order_of_ops() -> None:
     print("y = a + b*c@a:\n", y)
     # Operator precedence: matrix multiplication (@) happens before element-wise multiplication (*), then addition (+)
 
+def gradients_and_autograd() -> None:
+    # autograd builds a computation graph as you do tensor ops
+    # all tensors with requires_grad=True track gradients
+    x = torch.tensor(2.0, requires_grad=True)
+    y = x**2 + 3 * x
+    print("y:", y)
+
+    # backward computes dy/dx and stores it in x.grad
+    y.backward()
+    print("x.grad (dy/dx):", x.grad)
+
+    #we can zero gradient like so
+    #usually you would use .zero_grad() on a model/optimizer instead
+    x.grad.zero_()
+    print("x.grad after zeroing:", x.grad)
+    #methods ending with _ like add_ zero_ etc 
+    #do not update gradients
+    #they are useful for manipulating gradients themselves
+
+    # we can turn of tracking like so
+    y = x #set something so we dont raise an error
+
+    #this tells pytorch to ignore tracking
+    with torch.no_grad():
+        y += x**2 + 3 * x
+
+    y.backward()
+    print("x.grad ignoring +=:", x.grad)
+
+    # backward computes dy/dx and stores it in x.grad
+    y.backward()
+    print("x.grad (dy/dx):", x.grad)
+
+    # non-leaf tensors don't keep .grad by default
+    z = x * 2
+    print("z.grad is None:", z.grad is None)
+
+    # higher-order grads: create_graph=True keeps graph for gradients
+    x2 = torch.tensor(2.0, requires_grad=True)
+    y2 = x2**3
+    grad1 = torch.autograd.grad(y2, x2, create_graph=True)[0]
+    grad2 = torch.autograd.grad(grad1, x2)[0]
+    print("first derivative (dy/dx):", grad1)
+    print("second derivative (d2y/dx2):", grad2)
+
 
 def unsqueeze_expand() -> None:
     # unsqueeze adds a size-1 dimension (useful before expand/broadcast)
@@ -162,10 +207,13 @@ def einsum_examples() -> None:
     print("einsum sum over j:", summed)
 
 
+
+
 if __name__ == "__main__":
     # you uncomment stuff you care about
     tensor_basics()
     # order_of_ops()
+    # gradients_and_autograd()
     # unsqueeze_expand()
     # broadcast_matmul()
     # reductions()
