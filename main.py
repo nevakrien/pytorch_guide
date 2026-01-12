@@ -92,6 +92,67 @@ def gradients_and_autograd() -> None:
     print("second derivative (d2y/dx2):", grad2)
 
 
+def stack_and_concat() -> None:
+    # stack adds a new dimension, cat joins along an existing one
+    # stack inputs are tensors, so it DOES keep gradients
+    first = torch.tensor([1.0, 2.0], requires_grad=True)
+    second = torch.tensor([3.0, 4.0], requires_grad=True)
+
+    # stack takes a list of same-shaped tensors and creates a new dimension
+    # result shape here is (2, 2) because we added a dimension at dim=0
+    stacked = torch.stack([first, second], dim=0)
+
+    # cat (concat) joins tensors along an existing dimension
+    # result shape here is (4,) because it stitches dim=0 together
+    concatenated = torch.cat([first, second], dim=0)
+
+    print("stacked shape:", stacked.shape)
+    print("concatenated shape:", concatenated.shape)
+    print("stacked:\n", stacked)
+    print("concatenated:\n", concatenated)
+
+    stacked.sum().backward()
+    print("first.grad after stack:", first.grad)
+    print("second.grad after stack:", second.grad)
+
+
+def breaking_gradients() -> None:
+    #it is generally fairly hard to break gradients
+    #you would most likely get some sort of warning or error if you do
+
+    source = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
+    doubled = source * 2
+
+    # detach is an explicit way to cut the gradient
+    # it produces a tesnor of the same values but a fresh gradient
+    # operations on detach would not go back to the original
+    detached = doubled.detach()
+
+    print("detached.requires_grad:", detached.requires_grad)
+    try:
+        detached.sum().backward()
+    except RuntimeError as error:
+        print("backward on detached tensor:", error)
+
+    source.grad = None
+    doubled.sum().backward()
+    print("source.grad after normal backward:", source.grad)
+
+    #because numpy cant track gradients
+    #pytorch wont let us call numpy() on a tesnor that has gradients
+    try:
+        doubled_numpy = doubled.numpy()
+        print("doubled.numpy() result:", doubled_numpy)
+    except RuntimeError as error:
+        print("doubled.numpy() error:", error)
+
+    #instead we need to EXPLICTLY remove the gradient
+    #this lets us know we have lost gradient privlages
+    #if the tensor was on GPU we would also need to move to cpu
+    detached_numpy = doubled.detach().cpu().numpy()
+    print("to_numpy(doubled):", detached_numpy)
+
+
 def unsqueeze_expand() -> None:
     # unsqueeze adds a size-1 dimension (useful before expand/broadcast)
     # expand repeats along size-1 dims without copying data
@@ -243,6 +304,8 @@ if __name__ == "__main__":
     tensor_basics()
     # order_of_ops()
     # gradients_and_autograd()
+    # stack_and_concat()
+    # breaking_gradients()
     # unsqueeze_expand()
     # broadcast_matmul()
     # reductions()
