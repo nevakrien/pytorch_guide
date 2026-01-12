@@ -1,4 +1,5 @@
 import torch
+import warnings
 
 #look at main below for runing specific things
 
@@ -65,31 +66,22 @@ def gradients_and_autograd() -> None:
     y.backward()
     print("x.grad (dy/dx):", x.grad)
 
-    #we can zero gradient like so
-    #usually you would use .zero_grad() on a model/optimizer instead
+    # we can zero gradient like so
+    # usually you would use .zero_grad() on a model/optimizer instead
     x.grad.zero_()
     print("x.grad after zeroing:", x.grad)
-    #methods ending with _ like add_ zero_ etc 
-    #do not update gradients
-    #they are useful for manipulating gradients themselves
 
-    # we can turn of tracking like so
-    y = x #set something so we dont raise an error
 
-    #this tells pytorch to ignore tracking
+    # we can turn off tracking like so
+    # operations under no_grad() won't build a graph
     with torch.no_grad():
-        y += x**2 + 3 * x
+        y = x**2 + 3 * x
+    print("y.requires_grad under no_grad:", y.requires_grad)
 
+    # build a new tracked graph to show backward still works
+    y = x
     y.backward()
-    print("x.grad ignoring +=:", x.grad)
-
-    # backward computes dy/dx and stores it in x.grad
-    y.backward()
-    print("x.grad (dy/dx):", x.grad)
-
-    # non-leaf tensors don't keep .grad by default
-    z = x * 2
-    print("z.grad is None:", z.grad is None)
+    print("x.grad after fresh backward:", x.grad)
 
     # higher-order grads: create_graph=True keeps graph for gradients
     x2 = torch.tensor(2.0, requires_grad=True)
