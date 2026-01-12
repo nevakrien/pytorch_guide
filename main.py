@@ -1,8 +1,45 @@
 import torch
 
-def main() -> None:
-    #match follows operator order
-    a = torch.eye(3)
+#look at main below for runing specific things
+
+def tensor_basics() -> None:
+    # tensor = n-dimensional array (like numpy), holds numbers + shape + dtype
+    # arange makes a 1D tensor with evenly spaced values
+    x = torch.arange(6)
+    print("x (arange):", x)
+
+    # reshape changes the view of data without copying when possible
+    x2 = x.reshape(2, 3)
+    print("x reshaped to 2x3:\n", x2)
+
+    # rand creates random floats in [0, 1)
+    r = torch.rand((2, 3))
+    print("r (rand):\n", r)
+
+    # randn creates random floats from a normal distribution (mean=0, std=1)
+    n = torch.randn((2, 3))
+    print("n (randn):\n", n)
+
+    # zeros/ones create tensors filled with 0 or 1
+    z = torch.zeros((2, 3))
+    o = torch.ones((2, 3))
+    print("z (zeros):\n", z)
+    print("o (ones):\n", o)
+
+    # permute reorders dimensions (like transpose for more than 2 dims)
+    p = torch.rand((2, 3, 4))
+    print("p.shape:", p.shape)
+    print("p.permute(1, 0, 2).shape:", p.permute(1, 0, 2).shape)
+
+    # tensor() wraps a Python list and sets dtype if needed
+    t = torch.tensor([[1, 2, 3], [4, 5, 6]], dtype=torch.float32)
+    print("t (tensor from list):\n", t)
+    print("t.shape:", t.shape, "t.dtype:", t.dtype)
+
+
+def order_of_ops() -> None:
+    # basic arithmetic with tensors
+    a = torch.eye(3) #identity matrix
     b = torch.ones((3, 3))
     c = torch.zeros((3, 3))
     c[0, 1] = 2.0
@@ -11,12 +48,27 @@ def main() -> None:
     print("a (eye):\n", a)
     print("b (ones):\n", b)
     print("c (zeros + values):\n", c)
-    print("c@a:\n", c @ a)
-    print("b*c:\n", b * c)
+    print("c@a (matmul):\n", c @ a)
+    print("b*c (elementwise):\n", b * c)
     y = a + b*c@a
     print("y = a + b*c@a:\n", y)
     # Operator precedence: matrix multiplication (@) happens before element-wise multiplication (*), then addition (+)
 
+
+def unsqueeze_expand() -> None:
+    # unsqueeze adds a size-1 dimension (useful before expand/broadcast)
+    # expand repeats along size-1 dims without copying data
+    # expand_as uses another tensor's shape instead of explicit sizes
+    
+    example = torch.arange(3)# 1 2 3 similar to range
+    print("example:", example)
+    print("example.unsqueeze(1).shape:", example.unsqueeze(1).shape)
+    print("example.unsqueeze(1).expand(3, 2):\n", example.unsqueeze(1).expand(3, 2))
+    target = torch.zeros((3, 2))
+    print("example.unsqueeze(1).expand_as(target):\n", example.unsqueeze(1).expand_as(target))
+
+
+def broadcast_matmul() -> None:
     # broadcasting matrix mul
     # there is [5 7 8] [8 9]
     # the 2 8s have to be the same number
@@ -29,27 +81,59 @@ def main() -> None:
     print("right.shape:", right.shape)
     print("out.shape:", out.shape)
 
-    #indexing by boolean lets us gather specific inputs
-    #Boolean masking is also called masking - it selects elements where mask is True
-    #because the amount of true vs false is unknown the output is just an array with all the hits
+
+def reductions() -> None:
+    # reductions: mean/max/median work as torch.fn(x) or x.fn()
+    stats = torch.arange(12).reshape(3, 4).float()
+    print("stats:\n", stats)
+    print("torch.mean(stats):", torch.mean(stats))
+    print("stats.mean():", stats.mean())
+
+    # dim tells which axis to reduce (dim=0 columns, dim=1 rows for 2D)
+    print("stats.mean(dim=1):", stats.mean(dim=1))
+    print("stats.mean(dim=0):", stats.mean(dim=0))
+
+    # keepdim keeps the reduced dimension as size-1 so shapes still line up
+    print("stats.mean(dim=1, keepdim=True):\n", stats.mean(dim=1, keepdim=True))
+
+    # std stands for standard deviation (how spread out the values are)
+    # default is the sample version: divide by n-1 for a better estimate
+    # use unbiased=False for population std if you need it
+    print("stats.std(dim=1):", stats.std(dim=1))
+    print("stats.std(dim=1, unbiased=True):", stats.std(dim=1, unbiased=True))
+    print("stats.std(dim=1, unbiased=False):", stats.std(dim=1, unbiased=False))
+
+    # max/median works similarly but we have not only values but also indexes
+    max_vals, max_idx = stats.max(dim=0)
+    print("stats.max(dim=0):", max_vals, "indices:", max_idx)
+    median_vals, median_idx = stats.median(dim=1)
+    print("stats.median(dim=1):", median_vals, "indices:", median_idx)
+
+
+def boolean_indexing() -> None:
+    # indexing by boolean lets us gather specific inputs
+    # Boolean masking is also called masking - it selects elements where mask is True
+    # because the amount of true vs false is unknown the output is just an array with all the hits
     x = torch.rand((5,6,7,8))
-    mask = x % 2 < 0.5
+    mask = x % 2 < 0.5 #boolean tensor
     print("x:\n", x.shape)
     print("mask:\n", mask.shape)
     print("x[mask]:", x[mask].shape)
 
-    #torch.gather selects values from one dimension using an index tensor, output shape follows the index
-    #use gather when you want position-based picks with a predictable output shape
+
+def gather_examples() -> None:
+    # torch.gather selects values from one dimension using an index tensor, output shape follows the index
+    # use gather when you want position-based picks with a predictable output shape
     base = torch.tensor([[10, 11, 12], [20, 21, 22]])
     idx = torch.tensor([[2, 0], [1, 1]])
     gathered = torch.gather(base, 1, idx)
     print("base:\n", base)
     print("idx:\n", idx)
     print("gathered (torch.gather):\n", gathered)
-    #Summary: use boolean masks for filtering by condition, use gather for position-based picks
+    # Summary: use boolean masks for filtering by condition, use gather for position-based picks
 
-    #integer tensor indexing can replicate gather by building index tensors for all dims you want to pick
-    #use integer indexing when you need more flexible multi-dimension indexing patterns
+    # integer tensor indexing can replicate gather by building index tensors for all dims you want to pick
+    # use integer indexing when you need more flexible multi-dimension indexing patterns
     row_idx = torch.arange(base.size(0)).unsqueeze(1).expand_as(idx)
     indexed = base[row_idx, idx]
     print("base:\n", base)
@@ -57,5 +141,34 @@ def main() -> None:
     print("indexed (int tensor):\n", indexed)
 
 
+#this one i barely seen but it can be usefull
+#its mostly for advanced users
+def einsum_examples() -> None:
+    # einsum uses index notation (i,j,k) to describe tensor ops succinctly
+    # matrix multiply: (i,j) x (j,k) -> (i,k)
+    a = torch.rand((2, 3))
+    b = torch.rand((3, 4))
+    mm = torch.einsum("ij,jk->ik", a, b)
+    print("einsum matmul shape:", mm.shape)
+
+    # batch matmul: (b,i,j) x (b,j,k) -> (b,i,k)
+    left = torch.rand((5, 2, 3))
+    right = torch.rand((5, 3, 4))
+    bmm = torch.einsum("bij,bjk->bik", left, right)
+    print("einsum batch matmul shape:", bmm.shape)
+
+    # sum over a dimension: (i,j) -> (i)
+    summed = torch.einsum("ij->i", a)
+    print("einsum sum over j:", summed)
+
+
 if __name__ == "__main__":
-    main()
+    # you uncomment stuff you care about
+    tensor_basics()
+    # order_of_ops()
+    # unsqueeze_expand()
+    # broadcast_matmul()
+    # reductions()
+    # boolean_indexing()
+    # gather_examples()
+    # einsum_examples()
