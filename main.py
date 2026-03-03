@@ -38,6 +38,21 @@ def tensor_basics() -> None:
     print("t.shape:", t.shape, "t.dtype:", t.dtype)
 
 
+def tensor_like_shortcuts() -> None:
+    x = torch.arange(6,dtype=torch.float64)
+    print("x (arange):", x)
+
+    x2 = x.reshape(2, 3)
+    print("x reshaped to 2x3:\n", x2)
+
+    #note how type is preserved
+    ones = torch.ones_like(x2)
+    print("ones like 2x3:\n", ones)
+
+    zeros = torch.zeros_like(x2)
+    print("zeros like 2x3:\n", zeros)
+
+
 def order_of_ops() -> None:
     # basic arithmetic with tensors
     a = torch.eye(3) #identity matrix
@@ -302,6 +317,7 @@ def einsum_examples() -> None:
 if __name__ == "__main__":
     # you uncomment stuff you care about
     tensor_basics()
+    # tensor_like_shortcuts()
     # order_of_ops()
     # gradients_and_autograd()
     # stack_and_concat()
